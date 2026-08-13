@@ -12,6 +12,10 @@ export const metadata: Metadata = {
   title: "UniBook - Lecturer Appointment Booking",
   description:
     "Book consultation time with University of Ghana lecturers.",
+  icons: {
+    icon: [{ url: "/brand/unibook-mark.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/brand/apple-touch-icon.png" }],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

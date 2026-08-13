@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/BrandLogo";
 
 type Props = {
   active?: "login" | "register" | "home";
@@ -8,13 +9,7 @@ export function PublicNav({ active }: Props) {
   return (
     <header className="sticky top-0 z-50 border-b border-navy-deep bg-navy shadow-sm">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
-        <Link
-          href="/"
-          className="shrink-0 text-lg font-bold tracking-tight text-white no-underline sm:text-xl"
-          style={{ color: "#ffffff" }}
-        >
-          UniBook
-        </Link>
+        <BrandLogo href="/" size="sm" />
 
         <nav aria-label="Account" className="flex items-center gap-2 sm:gap-3">
           <Link

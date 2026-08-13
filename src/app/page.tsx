@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { BrandLogo } from "@/components/BrandLogo";
 import { auth } from "@/lib/auth";
 import { homePathForRole } from "@/lib/roles";
 
@@ -22,13 +23,7 @@ export default async function HomePage() {
       <header className="sticky top-0 z-50 border-b border-navy-deep bg-navy shadow-sm">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
           <div className="flex min-w-0 items-center gap-6 sm:gap-10">
-            <Link
-              href="/"
-              className="shrink-0 text-lg font-bold tracking-tight text-white no-underline sm:text-xl"
-              style={{ color: "#ffffff" }}
-            >
-              UniBook
-            </Link>
+            <BrandLogo href="/" size="sm" />
             <nav
               aria-label="Primary"
               className="hidden items-center gap-1 md:flex"
@@ -98,13 +93,25 @@ export default async function HomePage() {
 
           <div className="relative z-10 mx-auto flex min-h-[70vh] max-w-6xl items-center px-4 py-16 sm:min-h-[78vh] sm:px-6 sm:py-20">
             <div className="max-w-2xl motion-safe:animate-[fadeUp_0.4s_ease-out]">
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-white/90 drop-shadow">
-                University of Ghana
-              </p>
-              <p className="mt-3 text-4xl font-bold tracking-tight text-white drop-shadow-sm sm:text-5xl md:text-6xl">
-                UniBook
-              </p>
-              <h1 className="mt-4 text-balance text-xl font-semibold leading-snug text-white drop-shadow-sm sm:text-2xl md:text-3xl">
+              <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/brand/unibook-mark.svg"
+                  alt=""
+                  width={56}
+                  height={56}
+                  className="rounded-xl shadow-sm"
+                />
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-white/90 drop-shadow">
+                    University of Ghana
+                  </p>
+                  <p className="text-4xl font-bold tracking-tight text-white drop-shadow-sm sm:text-5xl md:text-6xl">
+                    UniBook
+                  </p>
+                </div>
+              </div>
+              <h1 className="mt-5 text-balance text-xl font-semibold leading-snug text-white drop-shadow-sm sm:text-2xl md:text-3xl">
                 Book lecturer consultations without buried emails.
               </h1>
               <p className="mt-4 max-w-lg text-pretty text-base leading-relaxed text-white/95 drop-shadow sm:text-lg">
@@ -298,13 +305,12 @@ export default async function HomePage() {
 
       <footer className="bg-navy-deep">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-8 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p className="text-white">
-            <span className="font-bold">UniBook</span>
+          <div className="flex items-center gap-3">
+            <BrandLogo href="/" size="sm" />
             <span className="text-white/60">
-              {" "}
-              · University of Ghana appointment booking
+              University of Ghana appointment booking
             </span>
-          </p>
+          </div>
           <div className="flex gap-4">
             <Link
               href="/login"

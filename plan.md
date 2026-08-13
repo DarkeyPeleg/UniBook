@@ -13,7 +13,7 @@
 | Hosting | Vercel |
 | Database | Neon Postgres via `@neondatabase/serverless` + Drizzle ORM |
 | Auth | Auth.js v5 **Credentials** (email + password); **no Google OAuth**; any email allowed |
-| Email | Resend (sync send on Accept/Decline - NFR-02 technical debt accepted) |
+| Email | **Deferred technical debt:** Resend Accept/Decline/cancel notify (FR-07 / NFR-02). Status changes work in-app without email. |
 | Domain | No email domain restriction |
 | Roles | `LECTURER_EMAILS` / `ADMIN_EMAILS` on register; default = `student` |
 | Exam artifacts | [`plan.md`](./plan.md) (architecture), [`design.md`](./design.md) (UI/UX) |

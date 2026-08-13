@@ -1,6 +1,6 @@
 # UniBook
 
-University of Ghana lecturer appointment booking - Next.js, Neon Postgres, Auth.js (email/password), Resend, Vercel.
+University of Ghana lecturer appointment booking - Next.js, Neon Postgres, Auth.js (email/password), Vercel.
 
 See [`plan.md`](./plan.md) and [`design.md`](./design.md).
 
@@ -17,10 +17,15 @@ See [`plan.md`](./plan.md) and [`design.md`](./design.md).
 |----------|---------|
 | `DATABASE_URL` | Neon Postgres connection string |
 | `AUTH_SECRET` | Auth.js session secret (`openssl rand -base64 32`) |
+| `AUTH_URL` / `NEXT_PUBLIC_APP_URL` | App URL (localhost in dev; Vercel URL in production) |
 | `LECTURER_EMAILS` | Comma-separated emails that register as lecturers |
 | `ADMIN_EMAILS` | Comma-separated emails that register as admins |
-| `RESEND_API_KEY` | Optional until Accept/Decline emails are needed |
-| `EMAIL_FROM` | Verified Resend from address |
+| `RESEND_API_KEY` | **Not required for MVP** - Resend notifications are technical debt |
+| `EMAIL_FROM` | Only needed when Resend is wired later |
+
+## Technical debt
+
+- **Appointment emails (FR-07 / Resend):** Accept, decline, and cancel update status in the app only. Email notify via Resend is deferred; leave `RESEND_API_KEY` empty for now.
 
 ## Demo logins (for testing)
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { BrandLogo } from "@/components/BrandLogo";
 import { SignOutButton } from "@/components/SignOutButton";
 import { signOut } from "@/lib/auth";
 import type { UserRole } from "@/lib/roles";
@@ -60,13 +61,7 @@ export function AppShell({ user, active, children }: Props) {
     <div className="flex min-h-svh flex-col bg-paper">
       <header className="sticky top-0 z-50 border-b border-navy-deep bg-navy">
         <div className="flex h-16 items-center justify-between gap-4 px-5 sm:px-6">
-          <Link
-            href={home}
-            className="text-xl font-bold tracking-tight text-white no-underline"
-            style={{ color: "#ffffff" }}
-          >
-            UniBook
-          </Link>
+          <BrandLogo href={home} size="md" />
           <div className="flex items-center gap-4">
             <Link
               href="/profile"
