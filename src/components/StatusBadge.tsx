@@ -2,6 +2,7 @@ const styles: Record<string, string> = {
   pending: "bg-[#fff8e1] text-pending",
   accepted: "bg-[#e8f5e9] text-accepted",
   declined: "bg-[#ffebee] text-declined",
+  cancelled: "bg-[#eceff1] text-cancelled",
   available: "bg-[#e8f5e9] text-available",
   unavailable: "bg-[#eceff1] text-unavailable",
 };

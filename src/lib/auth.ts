@@ -4,22 +4,8 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { users } from "@/db/schema";
+import { authConfig } from "@/lib/auth.config";
 import { verifyPassword } from "@/lib/password";
-import type { UserRole } from "@/lib/roles";
-
-declare module "next-auth" {
-  interface User {
-    role: UserRole;
-  }
-  interface Session {
-    user: {
-      id: string;
-      email: string;
-      name: string;
-      role: UserRole;
-    };
-  }
-}
 
 const credentialsSchema = z.object({
   email: z.email(),
@@ -27,6 +13,7 @@ const credentialsSchema = z.object({
 });
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   providers: [
     Credentials({
       name: "Email and Password",
@@ -62,25 +49,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  session: { strategy: "jwt" },
-  pages: {
-    signIn: "/login",
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id!;
-        token.role = user.role;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      session.user.id = String(token.id ?? "");
-      session.user.role = (token.role as UserRole) ?? "student";
-      session.user.email = String(token.email ?? session.user.email ?? "");
-      session.user.name = String(token.name ?? session.user.name ?? "");
-      return session;
-    },
-  },
-  trustHost: true,
 });

@@ -1,6 +1,9 @@
+import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { authConfig } from "@/lib/auth.config";
 import { homePathForRole, type UserRole } from "@/lib/roles";
+
+const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -30,11 +33,7 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/student", req.nextUrl.origin));
   }
 
-  if (
-    session &&
-    pathname.startsWith("/student") &&
-    role === "lecturer"
-  ) {
+  if (session && pathname.startsWith("/student") && role === "lecturer") {
     return NextResponse.redirect(new URL("/lecturer", req.nextUrl.origin));
   }
 

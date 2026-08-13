@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { AppHeader } from "@/components/AppHeader";
+import { AppShell } from "@/components/AppShell";
 import { Panel } from "@/components/Panel";
 import { StatusBadge } from "@/components/StatusBadge";
 import { auth } from "@/lib/auth";
@@ -13,10 +13,16 @@ export default async function AdminPage() {
   const { userCounts, apptCounts, recent } = await getAdminStats();
 
   return (
-    <>
-      <AppHeader user={session.user} />
-      <main className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8">
-        <h1 className="text-xl font-bold text-ink">System overview</h1>
+    <AppShell user={session.user} active="admin">
+      <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8 sm:px-6 sm:py-10">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-section">
+            Admin
+          </p>
+          <h1 className="mt-1 text-2xl font-bold text-ink sm:text-3xl">
+            System overview
+          </h1>
+        </div>
 
         <Panel title="Users">
           <dl className="grid grid-cols-3 gap-3 text-center text-sm">
@@ -36,7 +42,7 @@ export default async function AdminPage() {
         </Panel>
 
         <Panel title="Appointments">
-          <dl className="grid grid-cols-2 gap-3 text-center text-sm sm:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-3 text-center text-sm sm:grid-cols-5">
             <div>
               <dt className="text-ink-muted">Total</dt>
               <dd className="text-lg font-bold">{apptCounts?.total ?? 0}</dd>
@@ -52,6 +58,10 @@ export default async function AdminPage() {
             <div>
               <dt className="text-ink-muted">Declined</dt>
               <dd className="text-lg font-bold">{apptCounts?.declined ?? 0}</dd>
+            </div>
+            <div>
+              <dt className="text-ink-muted">Cancelled</dt>
+              <dd className="text-lg font-bold">{apptCounts?.cancelled ?? 0}</dd>
             </div>
           </dl>
         </Panel>
@@ -81,6 +91,6 @@ export default async function AdminPage() {
           )}
         </Panel>
       </main>
-    </>
+    </AppShell>
   );
 }

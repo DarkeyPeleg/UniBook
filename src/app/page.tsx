@@ -92,22 +92,22 @@ export default async function HomePage() {
             className="object-cover object-center"
           />
           <div
-            className="absolute inset-0 bg-navy/80 sm:bg-gradient-to-r sm:from-navy-deep/95 sm:via-navy/85 sm:to-navy/50"
+            className="absolute inset-0 bg-navy/45 sm:bg-gradient-to-r sm:from-navy-deep/70 sm:via-navy/45 sm:to-navy/25"
             aria-hidden
           />
 
           <div className="relative z-10 mx-auto flex min-h-[70vh] max-w-6xl items-center px-4 py-16 sm:min-h-[78vh] sm:px-6 sm:py-20">
             <div className="max-w-2xl motion-safe:animate-[fadeUp_0.4s_ease-out]">
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-white/75">
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-white/90 drop-shadow">
                 University of Ghana
               </p>
-              <p className="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
+              <p className="mt-3 text-4xl font-bold tracking-tight text-white drop-shadow-sm sm:text-5xl md:text-6xl">
                 UniBook
               </p>
-              <h1 className="mt-4 text-balance text-xl font-semibold leading-snug text-white sm:text-2xl md:text-3xl">
+              <h1 className="mt-4 text-balance text-xl font-semibold leading-snug text-white drop-shadow-sm sm:text-2xl md:text-3xl">
                 Book lecturer consultations without buried emails.
               </h1>
-              <p className="mt-4 max-w-lg text-pretty text-base leading-relaxed text-white/85 sm:text-lg">
+              <p className="mt-4 max-w-lg text-pretty text-base leading-relaxed text-white/95 drop-shadow sm:text-lg">
                 See who is accepting appointments, request a time slot, and
                 track accept or decline in one place.
               </p>
@@ -120,7 +120,7 @@ export default async function HomePage() {
                 </Link>
                 <a
                   href="#how-it-works"
-                  className="inline-flex min-h-12 cursor-pointer items-center rounded border-2 border-white px-6 py-3 text-sm font-semibold text-white no-underline transition-colors duration-150 hover:bg-white/10"
+                  className="inline-flex min-h-12 cursor-pointer items-center rounded bg-white px-6 py-3 text-sm font-semibold text-navy no-underline transition-colors duration-150 hover:bg-select"
                 >
                   How it works
                 </a>

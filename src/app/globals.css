@@ -18,6 +18,7 @@
   --color-pending: #8a6a1f;
   --color-accepted: #1b7a4e;
   --color-declined: #c62828;
+  --color-cancelled: #6b7280;
   --color-danger: #c62828;
   --color-on-navy: #ffffff;
 }
@@ -40,6 +41,7 @@
   --color-pending: var(--color-pending);
   --color-accepted: var(--color-accepted);
   --color-declined: var(--color-declined);
+  --color-cancelled: var(--color-cancelled);
   --color-danger: var(--color-danger);
   --color-on-navy: var(--color-on-navy);
   --font-sans: var(--font-open-sans);

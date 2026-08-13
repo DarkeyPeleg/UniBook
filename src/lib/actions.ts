@@ -3,10 +3,10 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { z } from "zod";
-import { db } from "@/db";
+import { db, withDbRetry } from "@/db";
 import { appointments, users } from "@/db/schema";
 import { signIn, auth } from "@/lib/auth";
-import { sendAppointmentStatusEmail } from "@/lib/email";
+import { sendAppointmentStatusEmail, sendAppointmentCancelledEmail } from "@/lib/email";
 import { hashPassword } from "@/lib/password";
 import {
   homePathForRole,
@@ -293,65 +293,259 @@ export async function respondToAppointment(
   return { ok: true };
 }
 
-export async function getAvailableLecturers() {
-  return db
+const cancelReasonSchema = z
+  .string()
+  .trim()
+  .min(3, "Please give a short reason for cancelling.")
+  .max(500, "Reason must be 500 characters or fewer.");
+
+export async function cancelAppointment(
+  appointmentId: string,
+  cancellationReason: string,
+): Promise<ActionResult> {
+  const session = await requireSession();
+  const parsedReason = cancelReasonSchema.safeParse(cancellationReason);
+  if (!parsedReason.success) {
+    return {
+      ok: false,
+      error: parsedReason.error.issues[0]?.message ?? "Invalid reason.",
+    };
+  }
+
+  const lecturerAlias = alias(users, "lecturer");
+  const studentAlias = alias(users, "student");
+
+  const [row] = await db
     .select({
-      id: users.id,
-      name: users.name,
-      email: users.email,
+      appointment: appointments,
+      student: studentAlias,
+      lecturer: lecturerAlias,
     })
-    .from(users)
-    .where(
-      and(eq(users.role, "lecturer"), eq(users.availabilityStatus, "available")),
-    )
-    .orderBy(users.name);
+    .from(appointments)
+    .innerJoin(studentAlias, eq(appointments.studentId, studentAlias.id))
+    .innerJoin(lecturerAlias, eq(appointments.lecturerId, lecturerAlias.id))
+    .where(eq(appointments.id, appointmentId))
+    .limit(1);
+
+  if (!row) return { ok: false, error: "Appointment not found." };
+
+  const isStudentOwner =
+    session.user.role === "student" &&
+    row.appointment.studentId === session.user.id;
+  const isLecturerOwner =
+    (session.user.role === "lecturer" || session.user.role === "admin") &&
+    (session.user.role === "admin" ||
+      row.appointment.lecturerId === session.user.id);
+
+  if (!isStudentOwner && !isLecturerOwner) {
+    return { ok: false, error: "Not authorized to cancel this appointment." };
+  }
+
+  if (
+    row.appointment.status !== "pending" &&
+    row.appointment.status !== "accepted"
+  ) {
+    return {
+      ok: false,
+      error: "Only pending or accepted appointments can be cancelled.",
+    };
+  }
+
+  await db
+    .update(appointments)
+    .set({
+      status: "cancelled",
+      cancellationReason: parsedReason.data,
+      cancelledByUserId: session.user.id,
+      updatedAt: sql`now()`,
+    })
+    .where(eq(appointments.id, appointmentId));
+
+  const cancelledByStudent = isStudentOwner;
+  const emailResult = cancelledByStudent
+    ? await sendAppointmentCancelledEmail({
+        to: row.lecturer.email,
+        recipientName: row.lecturer.name,
+        otherPartyName: row.student.name,
+        startsAt: row.appointment.startsAt,
+        cancellationReason: parsedReason.data,
+        cancelledByLabel: "the student",
+      })
+    : await sendAppointmentCancelledEmail({
+        to: row.student.email,
+        recipientName: row.student.name,
+        otherPartyName: row.lecturer.name,
+        startsAt: row.appointment.startsAt,
+        cancellationReason: parsedReason.data,
+        cancelledByLabel: "the lecturer",
+      });
+
+  if (!emailResult.ok) {
+    return {
+      ok: true,
+      emailWarning: "Appointment cancelled; email could not be sent.",
+    };
+  }
+
+  return { ok: true };
+}
+
+export async function getAvailableLecturers() {
+  return withDbRetry(() =>
+    db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+      })
+      .from(users)
+      .where(
+        and(
+          eq(users.role, "lecturer"),
+          eq(users.availabilityStatus, "available"),
+        ),
+      )
+      .orderBy(users.name),
+  );
+}
+
+export async function getAvailableLecturerById(lecturerId: string) {
+  return withDbRetry(async () => {
+    const [lecturer] = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+      })
+      .from(users)
+      .where(
+        and(
+          eq(users.id, lecturerId),
+          eq(users.role, "lecturer"),
+          eq(users.availabilityStatus, "available"),
+        ),
+      )
+      .limit(1);
+    return lecturer ?? null;
+  });
 }
 
 export async function getStudentAppointments(studentId: string) {
-  return db
-    .select({
-      id: appointments.id,
-      startsAt: appointments.startsAt,
-      reason: appointments.reason,
-      status: appointments.status,
-      lecturerName: users.name,
-      lecturerEmail: users.email,
-    })
-    .from(appointments)
-    .innerJoin(users, eq(appointments.lecturerId, users.id))
-    .where(eq(appointments.studentId, studentId))
-    .orderBy(desc(appointments.startsAt));
+  return withDbRetry(() =>
+    db
+      .select({
+        id: appointments.id,
+        startsAt: appointments.startsAt,
+        reason: appointments.reason,
+        status: appointments.status,
+        cancellationReason: appointments.cancellationReason,
+        cancelledByUserId: appointments.cancelledByUserId,
+        lecturerName: users.name,
+        lecturerEmail: users.email,
+      })
+      .from(appointments)
+      .innerJoin(users, eq(appointments.lecturerId, users.id))
+      .where(eq(appointments.studentId, studentId))
+      .orderBy(desc(appointments.startsAt)),
+  );
+}
+
+export async function getStudentRequestSummary(studentId: string) {
+  return withDbRetry(async () => {
+    const [row] = await db
+      .select({
+        pending: sql<number>`count(*) filter (where ${appointments.status} = 'pending')::int`,
+        accepted: sql<number>`count(*) filter (where ${appointments.status} = 'accepted')::int`,
+        declined: sql<number>`count(*) filter (where ${appointments.status} = 'declined')::int`,
+        cancelled: sql<number>`count(*) filter (where ${appointments.status} = 'cancelled')::int`,
+      })
+      .from(appointments)
+      .where(eq(appointments.studentId, studentId));
+
+    return {
+      pending: row?.pending ?? 0,
+      accepted: row?.accepted ?? 0,
+      declined: row?.declined ?? 0,
+      cancelled: row?.cancelled ?? 0,
+    };
+  });
 }
 
 export async function getPendingForLecturer(lecturerId: string) {
-  const student = alias(users, "student");
-  return db
-    .select({
-      id: appointments.id,
-      startsAt: appointments.startsAt,
-      reason: appointments.reason,
-      status: appointments.status,
-      studentName: student.name,
-      studentEmail: student.email,
-    })
-    .from(appointments)
-    .innerJoin(student, eq(appointments.studentId, student.id))
-    .where(
-      and(
-        eq(appointments.lecturerId, lecturerId),
-        eq(appointments.status, "pending"),
-      ),
-    )
-    .orderBy(appointments.startsAt);
+  return withDbRetry(() => {
+    const student = alias(users, "student");
+    return db
+      .select({
+        id: appointments.id,
+        startsAt: appointments.startsAt,
+        reason: appointments.reason,
+        status: appointments.status,
+        studentName: student.name,
+        studentEmail: student.email,
+      })
+      .from(appointments)
+      .innerJoin(student, eq(appointments.studentId, student.id))
+      .where(
+        and(
+          eq(appointments.lecturerId, lecturerId),
+          eq(appointments.status, "pending"),
+        ),
+      )
+      .orderBy(appointments.startsAt);
+  });
+}
+
+export async function getLecturerAppointments(lecturerId: string) {
+  return withDbRetry(() => {
+    const student = alias(users, "student");
+    return db
+      .select({
+        id: appointments.id,
+        startsAt: appointments.startsAt,
+        reason: appointments.reason,
+        status: appointments.status,
+        cancellationReason: appointments.cancellationReason,
+        cancelledByUserId: appointments.cancelledByUserId,
+        studentName: student.name,
+        studentEmail: student.email,
+      })
+      .from(appointments)
+      .innerJoin(student, eq(appointments.studentId, student.id))
+      .where(eq(appointments.lecturerId, lecturerId))
+      .orderBy(desc(appointments.startsAt));
+  });
+}
+
+export async function getLecturerRequestSummary(lecturerId: string) {
+  return withDbRetry(async () => {
+    const [row] = await db
+      .select({
+        pending: sql<number>`count(*) filter (where ${appointments.status} = 'pending')::int`,
+        accepted: sql<number>`count(*) filter (where ${appointments.status} = 'accepted')::int`,
+        declined: sql<number>`count(*) filter (where ${appointments.status} = 'declined')::int`,
+        cancelled: sql<number>`count(*) filter (where ${appointments.status} = 'cancelled')::int`,
+      })
+      .from(appointments)
+      .where(eq(appointments.lecturerId, lecturerId));
+
+    return {
+      pending: row?.pending ?? 0,
+      accepted: row?.accepted ?? 0,
+      declined: row?.declined ?? 0,
+      cancelled: row?.cancelled ?? 0,
+    };
+  });
 }
 
 export async function getLecturerAvailability(userId: string) {
-  const [user] = await db
-    .select({ availabilityStatus: users.availabilityStatus })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
-  return user?.availabilityStatus ?? "unavailable";
+  return withDbRetry(async () => {
+    const [user] = await db
+      .select({ availabilityStatus: users.availabilityStatus })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    return user?.availabilityStatus ?? "unavailable";
+  });
 }
 
 export async function getAdminStats() {
@@ -369,6 +563,7 @@ export async function getAdminStats() {
       pending: sql<number>`count(*) filter (where ${appointments.status} = 'pending')::int`,
       accepted: sql<number>`count(*) filter (where ${appointments.status} = 'accepted')::int`,
       declined: sql<number>`count(*) filter (where ${appointments.status} = 'declined')::int`,
+      cancelled: sql<number>`count(*) filter (where ${appointments.status} = 'cancelled')::int`,
     })
     .from(appointments);
 

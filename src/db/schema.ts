@@ -6,6 +6,7 @@ import {
   uniqueIndex,
   pgEnum,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const userRoleEnum = pgEnum("user_role", [
   "student",
@@ -22,6 +23,7 @@ export const appointmentStatusEnum = pgEnum("appointment_status", [
   "pending",
   "accepted",
   "declined",
+  "cancelled",
 ]);
 
 export const users = pgTable("users", {
@@ -51,6 +53,10 @@ export const appointments = pgTable(
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
     reason: text("reason").notNull(),
     status: appointmentStatusEnum("status").notNull().default("pending"),
+    cancellationReason: text("cancellation_reason"),
+    cancelledByUserId: uuid("cancelled_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -59,10 +65,10 @@ export const appointments = pgTable(
       .defaultNow(),
   },
   (table) => [
-    uniqueIndex("appointments_lecturer_starts_at_uidx").on(
-      table.lecturerId,
-      table.startsAt,
-    ),
+    // Only active bookings occupy a slot; declined/cancelled free it for rebooking.
+    uniqueIndex("appointments_lecturer_starts_at_uidx")
+      .on(table.lecturerId, table.startsAt)
+      .where(sql`status IN ('pending', 'accepted')`),
   ],
 );
 
