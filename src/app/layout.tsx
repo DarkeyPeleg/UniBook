@@ -9,7 +9,7 @@ const openSans = Open_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "UniBook — Lecturer Appointment Booking",
+  title: "UniBook - Lecturer Appointment Booking",
   description:
     "Book consultation time with University of Ghana lecturers.",
 };

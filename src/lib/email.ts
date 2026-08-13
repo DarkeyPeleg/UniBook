@@ -26,8 +26,8 @@ export async function sendAppointmentStatusEmail(
   });
   const subject =
     input.status === "accepted"
-      ? `Appointment Accepted — ${input.lecturerName}`
-      : `Appointment Declined — ${input.lecturerName}`;
+      ? `Appointment Accepted - ${input.lecturerName}`
+      : `Appointment Declined - ${input.lecturerName}`;
 
   const statusLabel =
     input.status === "accepted" ? "Accepted" : "Declined";
@@ -98,7 +98,7 @@ export async function sendAppointmentCancelledEmail(
     const { error } = await resend.emails.send({
       from: process.env.EMAIL_FROM ?? "UniBook <onboarding@resend.dev>",
       to: input.to,
-      subject: `Appointment Cancelled — ${input.otherPartyName}`,
+      subject: `Appointment Cancelled - ${input.otherPartyName}`,
       html: `
         <div style="font-family: Arial, Helvetica, sans-serif; color: #222;">
           <div style="background:#003366;color:#fff;padding:12px 16px;font-weight:700;">

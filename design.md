@@ -1,8 +1,8 @@
 # UniBook Design Document
 
-**Product:** UniBook — University Lecturer Appointment Booking System  
+**Product:** UniBook - University Lecturer Appointment Booking System  
 **Institution:** University of Ghana  
-**Reading this as:** trust-first university service UI aligned with UG Sakai (LMS) visual language — navy chrome, slate section bars, flat white panels, utilitarian sans-serif.
+**Reading this as:** trust-first university service UI aligned with UG Sakai (LMS) visual language - navy chrome, slate section bars, flat white panels, utilitarian sans-serif.
 
 **Visual reference:** University of Ghana Sakai portal (navy top bar, blue widget headers, white content, light gray page ground).
 
@@ -14,11 +14,11 @@ Companion docs: [`plan.md`](./plan.md) (architecture), SRS (requirements). Refer
 
 ## 1. Design goals
 
-1. **Clarity over decoration** — a student should book in under a minute; a lecturer should clear pending requests without hunting.
-2. **Role-obvious** — student and lecturer homes feel related but never confuse “request” with “approve.”
-3. **Status at a glance** — Pending / Accepted / Declined are the primary visual language after login.
-4. **Mobile-first usable** — NFR-01: same flows on phone and desktop; large tap targets for Accept/Decline.
-5. **Familiar UG portal feel** — match Sakai’s navy / slate-blue / white academic chrome so UniBook feels native to campus tools students already use.
+1. **Clarity over decoration** - a student should book in under a minute; a lecturer should clear pending requests without hunting.
+2. **Role-obvious** - student and lecturer homes feel related but never confuse “request” with “approve.”
+3. **Status at a glance** - Pending / Accepted / Declined are the primary visual language after login.
+4. **Mobile-first usable** - NFR-01: same flows on phone and desktop; large tap targets for Accept/Decline.
+5. **Familiar UG portal feel** - match Sakai’s navy / slate-blue / white academic chrome so UniBook feels native to campus tools students already use.
 
 ---
 
@@ -28,9 +28,9 @@ Companion docs: [`plan.md`](./plan.md) (architecture), SRS (requirements). Refer
 
 - **UniBook** appears as white wordmark in the navy top bar (Sakai-style chrome), and larger on the public landing.
 - Supporting line (one sentence): *Book consultation time with University of Ghana lecturers.*
-- App chrome after login: solid navy header — brand left, breadcrumb or page context center/left, user + Sign out right (icons optional, keep sparse).
+- App chrome after login: solid navy header - brand left, breadcrumb or page context center/left, user + Sign out right (icons optional, keep sparse).
 
-### 2.2 Color tokens (CSS variables) — Sakai-aligned
+### 2.2 Color tokens (CSS variables) - Sakai-aligned
 
 Extracted from the UG Sakai portal look:
 
@@ -60,7 +60,7 @@ Extracted from the UG Sakai portal look:
 
 Avoid: gold/terracotta accents, purple/indigo gradients, glassmorphism, heavy shadows, dark-mode-first shell, decorative serif display type.
 
-### 2.3 Typography — Sakai-aligned
+### 2.3 Typography - Sakai-aligned
 
 Sakai uses a compact utilitarian **sans-serif** stack. UniBook matches that (no display serif).
 
@@ -86,7 +86,7 @@ Tight academic spacing: line-height ~1.4–1.5 for body; section headers single-
 - Radius: `4px` on panels/inputs/buttons (Sakai-like, subtle).
 - Borders: `1px solid var(--color-line)`; **prefer border over shadow**.
 - Shadows: none or barely-there (`0 1px 2px rgba(0,0,0,.04)`).
-- **Panel pattern (primary content unit):** white surface + full-width `--color-section` header bar + white body — same language as Sakai widgets (“Message Of The Day”, “Calendar”).
+- **Panel pattern (primary content unit):** white surface + full-width `--color-section` header bar + white body - same language as Sakai widgets (“Message Of The Day”, “Calendar”).
 - Lists of lecturers/requests live inside these panels as divided rows (not marketing card grids).
 
 ### 2.5 Atmosphere (landing only)
@@ -147,31 +147,31 @@ Transparent landing header over the hero. Below fold: How it works (numbered col
 - Link between login ↔ register at the foot of the form.
 - Primary button: navy **Sign in** / **Create account**.
 
-### 4.2 Student — Available lecturers (`/student`)
+### 4.2 Student - Available lecturers (`/student`)
 
 - Page title + short helper: “Only lecturers currently accepting appointments are listed.”
 - **List (not card grid):** name, optional department/email snippet, green “Available” pill.
 - Row action: **Request appointment** → expands or navigates to inline form:
   - Date, time, reason (textarea)
   - Submit → success toast / redirect to requests
-- Empty state: calm copy — “No lecturers are accepting appointments right now.”
-- Collision (409): inline error — “That time slot is already requested. Choose another time.”
+- Empty state: calm copy - “No lecturers are accepting appointments right now.”
+- Collision (409): inline error - “That time slot is already requested. Choose another time.”
 
-### 4.3 Student — Requests (`/student/requests`)
+### 4.3 Student - Requests (`/student/requests`)
 
 - Chronological list (upcoming first).
 - Each row: lecturer name · datetime · reason excerpt · **status badge** (Pending / Accepted / Declined).
 - No Accept/Decline controls (read-only).
 - Soft note: “Refresh to see updates” (no WebSockets).
 
-### 4.4 Lecturer — Consultation desk (`/lecturer`)
+### 4.4 Lecturer - Consultation desk (`/lecturer`)
 
-**Section A — Master switch (FR-02)** — panel with section header “Availability”  
+**Section A - Master switch (FR-02)** - panel with section header “Availability”  
 - Large segmented control or toggle: **Accepting appointments** vs **Unavailable**.  
 - Status color binds to `--color-available` / `--color-unavailable`.  
 - Helper text explains students only see you when Accepting.
 
-**Section B — Pending requests (FR-05)** — panel with section header “Pending requests”  
+**Section B - Pending requests (FR-05)** - panel with section header “Pending requests”  
 - Dense but readable rows: student name/email · proposed time · reason.  
 - Actions: primary **Accept** (navy button) · secondary **Decline** (outline/danger).  
 - Confirm decline with lightweight confirm (“Decline this request?”) to prevent mis-taps.  
@@ -248,7 +248,7 @@ Touch: Accept/Decline not adjacent to accidental targets; 8px+ gap.
 
 - Contrast ≥ WCAG AA for text on paper/navy/white.
 - Toggle and buttons keyboard-reachable; visible focus (blue ring + select wash).
-- Status not by color alone — include text label on every badge.
+- Status not by color alone - include text label on every badge.
 - Form labels associated with inputs; errors linked via `aria-describedby`.
 - Sign-in button has clear accessible name.
 
@@ -257,7 +257,7 @@ Touch: Accept/Decline not adjacent to accidental targets; 8px+ gap.
 ## 10. Email (notification design)
 
 - From: UniBook / configured `EMAIL_FROM`
-- Subject: `Appointment Accepted — {Lecturer}` or `Appointment Declined — {Lecturer}`
+- Subject: `Appointment Accepted - {Lecturer}` or `Appointment Declined - {Lecturer}`
 - Body: plain HTML; navy header strip with white “UniBook”; body ink on white; lecturer name, date/time, status.
 - Matches Sakai-adjacent tone; mobile-readable single column; no heavy images.
 
@@ -285,7 +285,7 @@ Touch: Accept/Decline not adjacent to accidental targets; 8px+ gap.
 ## 13. Design acceptance checklist
 
 - [ ] Looks familiar next to UG Sakai: navy header, slate section bars, white panels, light gray page  
-- [ ] Open Sans (or equivalent) everywhere — no display serif  
+- [ ] Open Sans (or equivalent) everywhere - no display serif  
 - [ ] Landing first viewport: brand + one headline + one sentence + Sign in/Register CTAs + navy visual plane  
 - [ ] Student can find Available lecturers and submit date/time/reason on phone  
 - [ ] Lecturer master switch is unmistakable  

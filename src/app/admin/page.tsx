@@ -81,7 +81,7 @@ export default async function AdminPage() {
                       dateStyle: "medium",
                       timeStyle: "short",
                     })}{" "}
-                    — {row.reason.slice(0, 60)}
+                    - {row.reason.slice(0, 60)}
                     {row.reason.length > 60 ? "…" : ""}
                   </span>
                   <StatusBadge status={row.status} />

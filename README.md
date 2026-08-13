@@ -1,6 +1,6 @@
 # UniBook
 
-University of Ghana lecturer appointment booking — Next.js, Neon Postgres, Auth.js (email/password), Resend, Vercel.
+University of Ghana lecturer appointment booking - Next.js, Neon Postgres, Auth.js (email/password), Resend, Vercel.
 
 See [`plan.md`](./plan.md) and [`design.md`](./design.md).
 

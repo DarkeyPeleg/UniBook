@@ -1,6 +1,6 @@
 # UniBook 48-Hour MVP (Vercel Path)
 
-**Project:** UniBook — University Lecturer Appointment Booking System (University of Ghana)
+**Project:** UniBook - University Lecturer Appointment Booking System (University of Ghana)
 
 **Overview:** Greenfield 48-hour MVP on Vercel: Next.js App Router, Neon Postgres + Drizzle, Auth.js email/password sign-in (domain-restricted), Resend emails, covering FR-01–FR-07 with lecturer/student dashboards and collision-safe booking.
 
@@ -13,12 +13,12 @@
 | Hosting | Vercel |
 | Database | Neon Postgres via `@neondatabase/serverless` + Drizzle ORM |
 | Auth | Auth.js v5 **Credentials** (email + password); **no Google OAuth**; any email allowed |
-| Email | Resend (sync send on Accept/Decline — NFR-02 technical debt accepted) |
+| Email | Resend (sync send on Accept/Decline - NFR-02 technical debt accepted) |
 | Domain | No email domain restriction |
 | Roles | `LECTURER_EMAILS` / `ADMIN_EMAILS` on register; default = `student` |
 | Exam artifacts | [`plan.md`](./plan.md) (architecture), [`design.md`](./design.md) (UI/UX) |
 
-**SRS note (FR-01):** Original SRS specified Google SSO + university domain lock. This MVP uses **email/password with any email** — simpler for demos and local testing.
+**SRS note (FR-01):** Original SRS specified Google SSO + university domain lock. This MVP uses **email/password with any email** - simpler for demos and local testing.
 
 Out of scope (per SRS): Google Calendar sync, async job queues, `.ics` attachments, WebSockets. Also out: Google OAuth / SSO.
 
@@ -48,7 +48,7 @@ stateDiagram-v2
 
 **`users`**
 - `id` (uuid PK), `email` (unique), `name`
-- `passwordHash` (text) — bcrypt; never store plain passwords
+- `passwordHash` (text) - bcrypt; never store plain passwords
 - `role`: `student` | `lecturer` | `admin`
 - `availabilityStatus`: `available` | `unavailable` (lecturers only; default `unavailable`)
 - `createdAt`
@@ -70,16 +70,16 @@ stateDiagram-v2
 | `/` | Public | Landing + CTAs to Sign in / Register |
 | `/login` | Public | Email + password form |
 | `/register` | Public | Name, email, password |
-| `/student` | Student | List available lecturers; request form (date, time, reason) — FR-03 |
-| `/student/requests` | Student | History: Pending / Accepted / Declined — FR-06 |
-| `/lecturer` | Lecturer | Global Available/Unavailable toggle — FR-02; pending queue with Accept/Decline — FR-05 |
+| `/student` | Student | List available lecturers; request form (date, time, reason) - FR-03 |
+| `/student/requests` | Student | History: Pending / Accepted / Declined - FR-06 |
+| `/lecturer` | Lecturer | Global Available/Unavailable toggle - FR-02; pending queue with Accept/Decline - FR-05 |
 | `/admin` | Admin | Read-only health: user counts, recent appointments (minimal SRS admin) |
 
 Mutations via **Server Actions**:
 - `registerUser` / credentials `authorize` for login
 - `toggleAvailability`
 - `createAppointmentRequest` (assert lecturer is `available`; catch unique constraint)
-- `respondToAppointment(id, 'accepted' | 'declined')` — **NFR-03:** verify session user is the appointment’s lecturer (or admin)
+- `respondToAppointment(id, 'accepted' | 'declined')` - **NFR-03:** verify session user is the appointment’s lecturer (or admin)
 - After accept/decline: `await resend.emails.send(...)` to student (FR-07 / NFR-02)
 
 Auth gate: middleware protects `/student`, `/lecturer`, `/admin`; role mismatch redirects to the correct home.
@@ -125,24 +125,24 @@ src/
 
 ## Environment variables
 
-- `DATABASE_URL` — Neon
-- `AUTH_SECRET` — session encryption (generate with `openssl rand -base64 32`)
+- `DATABASE_URL` - Neon
+- `AUTH_SECRET` - session encryption (generate with `openssl rand -base64 32`)
 - `LECTURER_EMAILS=...` `ADMIN_EMAILS=...`
 - `RESEND_API_KEY`, `EMAIL_FROM`
-- `AUTH_URL` / `NEXT_PUBLIC_APP_URL` — production URL after deploy
+- `AUTH_URL` / `NEXT_PUBLIC_APP_URL` - production URL after deploy
 
 No `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`. No `ALLOWED_EMAIL_DOMAINS`.
 
 ## 48-hour execution order
 
-1. **Scaffold + git** — `create-next-app`, Tailwind, Drizzle, Auth.js, bcrypt, Resend; `README.md` + `.env.example`
-2. **Neon** — create project, schema + migration (`passwordHash`), wire `db`
-3. **Auth** — register + login (Credentials), domain + role checks, middleware
-4. **Lecturer** — availability toggle + pending Accept/Decline + authz
-5. **Student** — available lecturers list + request form + requests dashboard + unique-slot handling
-6. **Email** — Resend on status change
-7. **Polish** — responsive UI, empty states, error messages for 409 collisions
-8. **Deploy** — Vercel project link, env vars, smoke-test live URL
+1. **Scaffold + git** - `create-next-app`, Tailwind, Drizzle, Auth.js, bcrypt, Resend; `README.md` + `.env.example`
+2. **Neon** - create project, schema + migration (`passwordHash`), wire `db`
+3. **Auth** - register + login (Credentials), domain + role checks, middleware
+4. **Lecturer** - availability toggle + pending Accept/Decline + authz
+5. **Student** - available lecturers list + request form + requests dashboard + unique-slot handling
+6. **Email** - Resend on status change
+7. **Polish** - responsive UI, empty states, error messages for 409 collisions
+8. **Deploy** - Vercel project link, env vars, smoke-test live URL
 
 ## Implementation todos
 
@@ -154,7 +154,7 @@ No `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`. No `ALLOWED_EMAIL_DOMAINS`.
 
 ## Success checklist (SRS)
 
-- FR-01 Login (**email/password**, any email; not Google SSO / domain lock — intentional)
+- FR-01 Login (**email/password**, any email; not Google SSO / domain lock - intentional)
 - FR-02 Lecturer availability master switch
 - FR-03 Student browse + request
 - FR-04 DB unique constraint on lecturer+slot

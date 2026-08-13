@@ -35,15 +35,15 @@ export default function LoginPage() {
               </p>
               <ul className="mt-2 space-y-1.5 text-sm">
                 <li>
-                  <span className="text-ink-muted">Student — </span>
+                  <span className="text-ink-muted">Student - </span>
                   <code>student@test.com</code>
                 </li>
                 <li>
-                  <span className="text-ink-muted">Lecturer — </span>
+                  <span className="text-ink-muted">Lecturer - </span>
                   <code>lecturer@test.com</code>
                 </li>
                 <li>
-                  <span className="text-ink-muted">Admin — </span>
+                  <span className="text-ink-muted">Admin - </span>
                   <code>admin@test.com</code>
                 </li>
               </ul>

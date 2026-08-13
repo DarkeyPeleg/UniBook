@@ -18,7 +18,7 @@ export default async function HomePage() {
 
   return (
     <div className="flex min-h-full flex-col bg-paper">
-      {/* Clear solid nav — always visible */}
+      {/* Clear solid nav - always visible */}
       <header className="sticky top-0 z-50 border-b border-navy-deep bg-navy shadow-sm">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
           <div className="flex min-w-0 items-center gap-6 sm:gap-10">
@@ -157,7 +157,7 @@ export default async function HomePage() {
                 },
                 {
                   step: "3",
-                  title: "Accept or decline — with email notice",
+                  title: "Accept or decline - with email notice",
                   body: "Lecturers clear pending requests. Students see Pending, Accepted, or Declined status and get an email when it changes.",
                 },
               ].map((item) => (
@@ -199,19 +199,19 @@ export default async function HomePage() {
               <ul className="mt-6 space-y-2 text-sm text-ink">
                 <li className="flex gap-2">
                   <span className="font-bold text-navy" aria-hidden>
-                    –
+                    -
                   </span>
                   See only lecturers currently accepting appointments
                 </li>
                 <li className="flex gap-2">
                   <span className="font-bold text-navy" aria-hidden>
-                    –
+                    -
                   </span>
                   Track Pending, Accepted, and Declined requests
                 </li>
                 <li className="flex gap-2">
                   <span className="font-bold text-navy" aria-hidden>
-                    –
+                    -
                   </span>
                   Email notification when a decision is made
                 </li>
@@ -241,19 +241,19 @@ export default async function HomePage() {
               <ul className="mt-6 space-y-2 text-sm text-ink">
                 <li className="flex gap-2">
                   <span className="font-bold text-navy" aria-hidden>
-                    –
+                    -
                   </span>
                   Toggle Accepting / Unavailable anytime
                 </li>
                 <li className="flex gap-2">
                   <span className="font-bold text-navy" aria-hidden>
-                    –
+                    -
                   </span>
                   Accept or decline pending requests in one click
                 </li>
                 <li className="flex gap-2">
                   <span className="font-bold text-navy" aria-hidden>
-                    –
+                    -
                   </span>
                   Students are notified automatically by email
                 </li>
