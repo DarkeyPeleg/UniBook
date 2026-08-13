@@ -5,6 +5,9 @@ const styles: Record<string, string> = {
   cancelled: "bg-[#eceff1] text-cancelled",
   available: "bg-[#e8f5e9] text-available",
   unavailable: "bg-[#eceff1] text-unavailable",
+  student: "bg-select text-navy",
+  lecturer: "bg-select text-navy",
+  admin: "bg-[#fff8e1] text-pending",
 };
 
 type Props = {

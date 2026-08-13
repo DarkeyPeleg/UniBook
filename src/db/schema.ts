@@ -5,6 +5,7 @@ import {
   timestamp,
   uniqueIndex,
   pgEnum,
+  integer,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -51,6 +52,7 @@ export const appointments = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    durationMinutes: integer("duration_minutes").notNull().default(60),
     reason: text("reason").notNull(),
     status: appointmentStatusEnum("status").notNull().default("pending"),
     cancellationReason: text("cancellation_reason"),

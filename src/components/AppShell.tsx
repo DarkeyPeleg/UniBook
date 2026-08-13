@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { SignOutButton } from "@/components/SignOutButton";
 import { signOut } from "@/lib/auth";
 import type { UserRole } from "@/lib/roles";
 
@@ -9,7 +10,9 @@ export type AppNavActive =
   | "requests"
   | "desk"
   | "lecturerRequests"
-  | "admin";
+  | "admin"
+  | "profile"
+  | "calendar";
 
 type User = { name: string; email: string; role: UserRole };
 
@@ -36,9 +39,11 @@ function navItemsFor(role: UserRole): NavItem[] {
       { href: "/lecturer/requests", label: "Requests", key: "lecturerRequests" },
     );
   }
+  items.push({ href: "/calendar", label: "Calendar", key: "calendar" });
   if (role === "admin") {
     items.push({ href: "/admin", label: "Admin", key: "admin" });
   }
+  items.push({ href: "/profile", label: "Profile", key: "profile" });
   return items;
 }
 
@@ -63,26 +68,24 @@ export function AppShell({ user, active, children }: Props) {
             UniBook
           </Link>
           <div className="flex items-center gap-4">
-            <div className="hidden text-right text-sm leading-tight sm:block">
-              <p className="font-semibold text-white" style={{ color: "#ffffff" }}>
+            <Link
+              href="/profile"
+              className="hidden text-right text-sm leading-tight no-underline sm:block"
+            >
+              <p
+                className="font-semibold text-white hover:underline"
+                style={{ color: "#ffffff" }}
+              >
                 {user.name}
               </p>
               <p className="capitalize text-white/75">{user.role}</p>
-            </div>
-            <form
+            </Link>
+            <SignOutButton
               action={async () => {
                 "use server";
                 await signOut({ redirectTo: "/" });
               }}
-            >
-              <button
-                type="submit"
-                className="min-h-10 cursor-pointer rounded-md border border-white/40 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
-                style={{ color: "#ffffff" }}
-              >
-                Sign out
-              </button>
-            </form>
+            />
           </div>
         </div>
       </header>
@@ -104,10 +107,14 @@ export function AppShell({ user, active, children }: Props) {
               ))}
             </nav>
 
-            <div className="mt-auto border-t border-line px-3 pt-5">
+            <Link
+              href="/profile"
+              className="mt-auto border-t border-line px-3 pt-5 no-underline hover:opacity-80"
+            >
               <p className="truncate text-sm font-bold text-ink">{user.name}</p>
               <p className="mt-1 truncate text-sm text-ink-muted">{user.email}</p>
-            </div>
+              <p className="mt-2 text-xs font-semibold text-link">View profile</p>
+            </Link>
           </div>
         </aside>
 

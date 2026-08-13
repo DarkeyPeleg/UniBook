@@ -4,7 +4,10 @@ import { AppShell } from "@/components/AppShell";
 import { BookingForm } from "@/components/BookingForm";
 import { StatusBadge } from "@/components/StatusBadge";
 import { auth } from "@/lib/auth";
-import { getAvailableLecturerById } from "@/lib/actions";
+import {
+  getAvailableLecturerById,
+  getLecturerOccupiedSlots,
+} from "@/lib/actions";
 
 type Props = {
   params: Promise<{ lecturerId: string }>;
@@ -17,6 +20,11 @@ export default async function BookLecturerPage({ params }: Props) {
   const { lecturerId } = await params;
   const lecturer = await getAvailableLecturerById(lecturerId);
   if (!lecturer) notFound();
+
+  const from = new Date();
+  const to = new Date();
+  to.setUTCDate(to.getUTCDate() + 90);
+  const occupied = await getLecturerOccupiedSlots(lecturer.id, from, to);
 
   return (
     <AppShell user={session.user} active="book">
@@ -34,7 +42,8 @@ export default async function BookLecturerPage({ params }: Props) {
             Book appointment
           </h1>
           <p className="mt-2 text-base text-ink-muted">
-            Send a consultation request to this lecturer.
+            Pick a meeting length and an open start time. Overlapping times for
+            this lecturer are blocked.
           </p>
         </div>
 
@@ -69,6 +78,10 @@ export default async function BookLecturerPage({ params }: Props) {
             <BookingForm
               lecturerId={lecturer.id}
               lecturerName={lecturer.name}
+              occupiedSlots={occupied.map((row) => ({
+                startsAt: row.startsAt.toISOString(),
+                durationMinutes: row.durationMinutes,
+              }))}
             />
           </div>
         </section>

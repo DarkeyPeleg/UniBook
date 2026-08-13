@@ -1,13 +1,13 @@
 "use server";
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { z } from "zod";
 import { db, withDbRetry } from "@/db";
 import { appointments, users } from "@/db/schema";
-import { signIn, auth } from "@/lib/auth";
 import { sendAppointmentStatusEmail, sendAppointmentCancelledEmail } from "@/lib/email";
-import { hashPassword } from "@/lib/password";
+import { hashPassword, verifyPassword } from "@/lib/password";
+import { signIn, auth, unstable_update } from "@/lib/auth";
 import {
   homePathForRole,
   resolveRoleForEmail,
@@ -15,6 +15,13 @@ import {
 } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
+import {
+  appointmentEnd,
+  buildStartsAt,
+  isIntervalTaken,
+  isValidDuration,
+  parseTimeToMinutes,
+} from "@/lib/slots";
 import type { ActionResult } from "@/lib/types";
 
 export type { ActionResult };
@@ -128,6 +135,124 @@ async function requireSession() {
   return session;
 }
 
+export async function getCurrentUserProfile() {
+  const session = await requireSession();
+  return withDbRetry(async () => {
+    const [user] = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        availabilityStatus: users.availabilityStatus,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1);
+    return user ?? null;
+  });
+}
+
+const updateProfileSchema = z.object({
+  name: z.string().trim().min(2, "Name is required"),
+  email: z.string().trim().email("Enter a valid email"),
+  currentPassword: z.string().optional(),
+  newPassword: z.string().optional(),
+});
+
+export async function updateProfile(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const session = await requireSession();
+
+  const newPasswordRaw = String(formData.get("newPassword") ?? "");
+  const currentPasswordRaw = String(formData.get("currentPassword") ?? "");
+
+  const parsed = updateProfileSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    currentPassword: currentPasswordRaw || undefined,
+    newPassword: newPasswordRaw || undefined,
+  });
+
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Invalid input",
+    };
+  }
+
+  if (newPasswordRaw && newPasswordRaw.length < 8) {
+    return {
+      ok: false,
+      error: "New password must be at least 8 characters.",
+    };
+  }
+
+  if (newPasswordRaw && !currentPasswordRaw) {
+    return {
+      ok: false,
+      error: "Enter your current password to set a new one.",
+    };
+  }
+
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1);
+
+  if (!user) {
+    return { ok: false, error: "Account not found." };
+  }
+
+  const email = parsed.data.email.toLowerCase();
+
+  if (email !== user.email) {
+    const [taken] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+    if (taken) {
+      return { ok: false, error: "That email is already in use." };
+    }
+  }
+
+  const updates: {
+    name: string;
+    email: string;
+    passwordHash?: string;
+  } = {
+    name: parsed.data.name,
+    email,
+  };
+
+  if (newPasswordRaw) {
+    const valid = await verifyPassword(
+      currentPasswordRaw,
+      user.passwordHash,
+    );
+    if (!valid) {
+      return { ok: false, error: "Current password is incorrect." };
+    }
+    updates.passwordHash = await hashPassword(newPasswordRaw);
+  }
+
+  await db.update(users).set(updates).where(eq(users.id, session.user.id));
+
+  await unstable_update({
+    user: {
+      name: updates.name,
+      email: updates.email,
+    },
+  });
+
+  redirect("/profile?updated=1");
+}
+
 export async function toggleAvailability(): Promise<ActionResult> {
   const session = await requireSession();
   if (session.user.role !== "lecturer" && session.user.role !== "admin") {
@@ -157,6 +282,7 @@ const requestSchema = z.object({
   lecturerId: z.string().uuid(),
   date: z.string().min(1),
   time: z.string().min(1),
+  durationMinutes: z.coerce.number().int(),
   reason: z.string().trim().min(5, "Please provide a short reason."),
 });
 
@@ -173,11 +299,19 @@ export async function createAppointmentRequest(
     lecturerId: formData.get("lecturerId"),
     date: formData.get("date"),
     time: formData.get("time"),
+    durationMinutes: formData.get("durationMinutes"),
     reason: formData.get("reason"),
   });
 
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  if (!isValidDuration(parsed.data.durationMinutes)) {
+    return {
+      ok: false,
+      error: "Choose a meeting length of 15, 30, 45, or 60 minutes.",
+    };
   }
 
   const [lecturer] = await db
@@ -199,7 +333,18 @@ export async function createAppointmentRequest(
     };
   }
 
-  const startsAt = new Date(`${parsed.data.date}T${parsed.data.time}:00`);
+  const minutes = parseTimeToMinutes(parsed.data.time);
+  if (minutes === null) {
+    return {
+      ok: false,
+      error: "Choose a start time in 15-minute steps between 8:00 AM and 5:00 PM.",
+    };
+  }
+
+  const durationMinutes = parsed.data.durationMinutes;
+  const startsAt = buildStartsAt(parsed.data.date, minutes);
+  const endsAt = appointmentEnd(startsAt, durationMinutes);
+
   if (Number.isNaN(startsAt.getTime())) {
     return { ok: false, error: "Invalid date or time." };
   }
@@ -207,11 +352,48 @@ export async function createAppointmentRequest(
     return { ok: false, error: "Choose a future date and time." };
   }
 
+  const dayStart = new Date(`${parsed.data.date}T00:00:00`);
+  const dayEnd = new Date(`${parsed.data.date}T23:59:59.999`);
+
+  const occupied = await db
+    .select({
+      startsAt: appointments.startsAt,
+      durationMinutes: appointments.durationMinutes,
+    })
+    .from(appointments)
+    .where(
+      and(
+        eq(appointments.lecturerId, lecturer.id),
+        inArray(appointments.status, ["pending", "accepted"]),
+        gte(appointments.startsAt, dayStart),
+        lte(appointments.startsAt, dayEnd),
+      ),
+    );
+
+  if (isIntervalTaken(startsAt, durationMinutes, occupied)) {
+    return {
+      ok: false,
+      error:
+        "That time overlaps an existing booking for this lecturer. Choose another slot.",
+    };
+  }
+
+  // Guard: meeting must end by 5pm
+  const endMinutes =
+    endsAt.getUTCHours() * 60 + endsAt.getUTCMinutes();
+  if (endMinutes > 17 * 60) {
+    return {
+      ok: false,
+      error: "Meetings must finish by 5:00 PM.",
+    };
+  }
+
   try {
     await db.insert(appointments).values({
       studentId: session.user.id,
       lecturerId: lecturer.id,
       startsAt,
+      durationMinutes,
       reason: parsed.data.reason,
       status: "pending",
     });
@@ -224,7 +406,8 @@ export async function createAppointmentRequest(
     ) {
       return {
         ok: false,
-        error: "That time slot is already requested. Choose another time.",
+        error:
+          "That time overlaps an existing booking for this lecturer. Choose another slot.",
       };
     }
     throw error;
@@ -513,6 +696,96 @@ export async function getLecturerAppointments(lecturerId: string) {
       .innerJoin(student, eq(appointments.studentId, student.id))
       .where(eq(appointments.lecturerId, lecturerId))
       .orderBy(desc(appointments.startsAt));
+  });
+}
+
+/** Pending + accepted intervals that block new bookings for this lecturer. */
+export async function getLecturerOccupiedSlots(
+  lecturerId: string,
+  from: Date,
+  to: Date,
+) {
+  return withDbRetry(() =>
+    db
+      .select({
+        startsAt: appointments.startsAt,
+        durationMinutes: appointments.durationMinutes,
+        status: appointments.status,
+      })
+      .from(appointments)
+      .where(
+        and(
+          eq(appointments.lecturerId, lecturerId),
+          inArray(appointments.status, ["pending", "accepted"]),
+          gte(appointments.startsAt, from),
+          lte(appointments.startsAt, to),
+        ),
+      )
+      .orderBy(appointments.startsAt),
+  );
+}
+
+export async function getStudentCalendarAppointments(
+  studentId: string,
+  from: Date,
+  to: Date,
+) {
+  return withDbRetry(() =>
+    db
+      .select({
+        id: appointments.id,
+        startsAt: appointments.startsAt,
+        durationMinutes: appointments.durationMinutes,
+        reason: appointments.reason,
+        status: appointments.status,
+        otherPartyName: users.name,
+      })
+      .from(appointments)
+      .innerJoin(users, eq(appointments.lecturerId, users.id))
+      .where(
+        and(
+          eq(appointments.studentId, studentId),
+          inArray(appointments.status, ["pending", "accepted", "cancelled", "declined"]),
+          gte(appointments.startsAt, from),
+          lte(appointments.startsAt, to),
+        ),
+      )
+      .orderBy(appointments.startsAt),
+  );
+}
+
+export async function getLecturerCalendarAppointments(
+  lecturerId: string,
+  from: Date,
+  to: Date,
+) {
+  return withDbRetry(() => {
+    const student = alias(users, "student");
+    return db
+      .select({
+        id: appointments.id,
+        startsAt: appointments.startsAt,
+        durationMinutes: appointments.durationMinutes,
+        reason: appointments.reason,
+        status: appointments.status,
+        otherPartyName: student.name,
+      })
+      .from(appointments)
+      .innerJoin(student, eq(appointments.studentId, student.id))
+      .where(
+        and(
+          eq(appointments.lecturerId, lecturerId),
+          inArray(appointments.status, [
+            "pending",
+            "accepted",
+            "cancelled",
+            "declined",
+          ]),
+          gte(appointments.startsAt, from),
+          lte(appointments.startsAt, to),
+        ),
+      )
+      .orderBy(appointments.startsAt);
   });
 }
 

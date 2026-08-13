@@ -15,7 +15,9 @@ export default auth((req) => {
   const isProtected =
     pathname.startsWith("/student") ||
     pathname.startsWith("/lecturer") ||
-    pathname.startsWith("/admin");
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/calendar");
 
   if (!session && isProtected) {
     const url = new URL("/login", req.nextUrl.origin);
@@ -51,6 +53,10 @@ export const config = {
     "/student/:path*",
     "/lecturer/:path*",
     "/admin/:path*",
+    "/profile",
+    "/profile/:path*",
+    "/calendar",
+    "/calendar/:path*",
     "/login",
     "/register",
   ],

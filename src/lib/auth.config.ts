@@ -26,10 +26,23 @@ export const authConfig = {
   },
   providers: [],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id!;
         token.role = user.role;
+        if (user.name) token.name = user.name;
+        if (user.email) token.email = user.email;
+      }
+      if (trigger === "update" && session) {
+        const next = session as {
+          name?: string;
+          email?: string;
+          user?: { name?: string; email?: string };
+        };
+        const name = next.name ?? next.user?.name;
+        const email = next.email ?? next.user?.email;
+        if (typeof name === "string") token.name = name;
+        if (typeof email === "string") token.email = email;
       }
       return token;
     },
@@ -47,7 +60,9 @@ export const authConfig = {
       const isProtected =
         pathname.startsWith("/student") ||
         pathname.startsWith("/lecturer") ||
-        pathname.startsWith("/admin");
+        pathname.startsWith("/admin") ||
+        pathname.startsWith("/profile") ||
+        pathname.startsWith("/calendar");
 
       if (!auth && isProtected) return false;
       if (auth && isAuthPage) return true;
